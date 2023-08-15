@@ -6,10 +6,14 @@ export interface LapProps {
   onDelete: () => void;
 }
 
+/* 
+Notes:
+- Delete function does not delete invidiual lap but all of the laps
+*/
+
 export default function Lap({ index, lap, onDelete }: LapProps) {
   return (
-    // Repeated components require a unique key
-    <div key={`unique-lap-key-${index}`} className='stopwatch-lap'>
+    <div className='stopwatch-lap'>
       <strong>{index}</strong>/ {formattedSeconds(lap)}{' '}
       <button onClick={onDelete}> X </button>
     </div>

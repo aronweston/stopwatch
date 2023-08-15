@@ -59,7 +59,7 @@ export default class Stopwatch extends Component<
     });
   }
 
-  //Change this to 'handleLapClick'
+  //Change function naming to 'handleLapClick'
   private handleLapClick() {
     const laps = [...this.state.laps, this.state.secondsElapsed];
     this.setState({ laps });
@@ -106,10 +106,12 @@ export default class Stopwatch extends Component<
         <div className='stopwatch-laps'>
           {this.state.laps &&
             this.state.laps.map((lap, i) => (
+              // Repeated components require a unique key
               <Lap
+                key={`unique-lap-key-${i}`}
                 index={i + 1}
                 lap={lap}
-                onDelete={() => this.handleDeleteClick(i)}
+                onDelete={() => this.handleDeleteClick(i + 1)}
               />
             ))}
         </div>
