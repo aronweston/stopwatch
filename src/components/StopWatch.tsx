@@ -15,6 +15,7 @@ interface StopwatchState {
   lastClearedIncrementer: null | (() => any);
   secondsElapsed: StopwatchProps['initialSeconds'];
   laps: ILap[];
+  idValue: number;
 }
 
 export default class Stopwatch extends Component<
@@ -22,13 +23,13 @@ export default class Stopwatch extends Component<
   StopwatchState
 > {
   public incrementer: any;
-  public idValue = 1;
 
   //Set state to a public object and assign a type to the variable
   public state: StopwatchState = {
     secondsElapsed: 0,
     lastClearedIncrementer: null,
     laps: [],
+    idValue: 1,
   };
 
   constructor(props: StopwatchProps) {
@@ -45,6 +46,11 @@ export default class Stopwatch extends Component<
   }
 
   private handleStartClick() {
+    //Setting the state early prevents the 1 second lag that happens on first click of start button
+    if (this.state.secondsElapsed === 0) {
+      this.setState({ secondsElapsed: this.state.secondsElapsed + 1 });
+    }
+
     this.incrementer = setInterval(
       () => this.setState({ secondsElapsed: this.state.secondsElapsed + 1 }),
       1000
@@ -58,23 +64,24 @@ export default class Stopwatch extends Component<
 
   private handleResetClick() {
     clearInterval(this.incrementer);
-    this.setState({ laps: [], secondsElapsed: 0 });
+
+    this.setState({ laps: [], secondsElapsed: 0, idValue: 1 });
   }
 
   //Change function naming to 'handleLapClick'
   private handleLapClick() {
+    const { idValue, secondsElapsed } = this.state;
+
     //Create a lap object with a unique id value and the time elapsed
-    const lap: ILap = { id: this.idValue, time: this.state.secondsElapsed };
+    const lap: ILap = { id: idValue, time: secondsElapsed };
 
     //Create a laps array with the new lap above
     const laps: ILap[] = [...this.state.laps, lap];
 
     //Increment each value to set the new id value to the next lap selected
-    this.idValue++;
-
     //Set the new array of laps to state
     //Remove forceUpdate() due to setState updating the component as state has changed, and removes any unexpected bugs
-    this.setState({ laps });
+    this.setState({ laps, idValue: idValue + 1 });
   }
 
   private handleDeleteClick(lapId: number) {
@@ -86,12 +93,13 @@ export default class Stopwatch extends Component<
     const filteredLaps = this.state.laps.filter((lap) => lap.id !== found.id);
 
     //Reset the id value counter to 1 when all laps are removed
-    if (this.state.laps.length === 1) {
-      this.idValue = 1;
-    }
+    const isLastItem = this.state.laps.length === 1;
 
     //Set the new array to state
-    this.setState({ laps: filteredLaps });
+    this.setState({
+      laps: filteredLaps,
+      idValue: isLastItem ? 1 : this.state.idValue,
+    });
   }
 
   render() {
