@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Stopwatch from './components/StopWatch';
+import './styles/main.scss';
 
 ReactDOM.render(
   <React.StrictMode>

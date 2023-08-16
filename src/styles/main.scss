@@ -1,0 +1,15 @@
+.stopwatch {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  min-height: 80vh;
+  max-width: 80%;
+
+  &__controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
