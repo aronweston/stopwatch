@@ -18,6 +18,7 @@ interface StopwatchState {
   miliSecondsElapsed: StopwatchProps['initialSeconds'];
   laps: ILap[];
   idValue: number;
+  isPreloaded: boolean;
 }
 
 export default class Stopwatch extends Component<
@@ -34,6 +35,7 @@ export default class Stopwatch extends Component<
     lastClearedIncrementer: null,
     laps: [],
     idValue: 1,
+    isPreloaded: false,
   };
 
   constructor(props: StopwatchProps) {
@@ -47,6 +49,14 @@ export default class Stopwatch extends Component<
     this.handleStartClick = this.handleStartClick.bind(this);
     this.handleLapClick = this.handleLapClick.bind(this);
     this.handleResetClick = this.handleResetClick.bind(this);
+    this.persistToStorage = this.persistToStorage.bind(this);
+  }
+
+  componentDidMount(): void {
+    const state = this.fetchSavedTimes();
+    if (!state) return;
+    this.setState({ ...state, isPreloaded: true });
+    this.handleStopClick();
   }
 
   private handleStartClick() {
@@ -86,6 +96,18 @@ export default class Stopwatch extends Component<
       miliSecondsElapsed: 0,
       idValue: 1,
     });
+    this.persistToStorage('Reset times');
+  }
+
+  private fetchSavedTimes() {
+    const data = localStorage.getItem('stopwatch_state');
+    if (!data) return null;
+    return JSON.parse(data);
+  }
+
+  private persistToStorage(message = 'Saved Times') {
+    localStorage.setItem('stopwatch_state', JSON.stringify(this.state));
+    window.alert(message);
   }
 
   //Change function naming to 'handleLapClick'
@@ -164,9 +186,16 @@ export default class Stopwatch extends Component<
         </button>
 
         {timerHasStarted && (
-          <button type='button' onClick={handleLapAndResetClick}>
-            {!isLastIncrementer ? 'Lap' : 'Reset'}
-          </button>
+          <>
+            <button type='button' onClick={handleLapAndResetClick}>
+              {!isLastIncrementer ? 'Lap' : 'Reset'}
+            </button>
+
+            {/* Add persist to localStorage button so users can come back to their saved data */}
+            <button type='button' onClick={() => this.persistToStorage()}>
+              Save
+            </button>
+          </>
         )}
 
         <div className='stopwatch-laps'>
