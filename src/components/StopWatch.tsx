@@ -1,6 +1,7 @@
 import { Component, ClassAttributes } from 'react';
 import { formattedSeconds } from '../utils/helpers';
 import Lap from './Lap';
+import { Helmet } from 'react-helmet';
 
 interface StopwatchProps extends ClassAttributes<Stopwatch> {
   initialSeconds: number;
@@ -173,79 +174,89 @@ export default class Stopwatch extends Component<
       : this.handleResetClick;
 
     return (
-      <main className='stopwatch'>
-        {/* Store calculations in variables before template render for clarity  */}
-        <div className='stopwatch__timer'>
-          <h1>
-            <span className='stopwatch__timer--seconds'>{seconds}</span>
-            <span className='stopwatch__timer--mili'>
-              .{''}
-              {miliSecondsElapsed}
-            </span>
-          </h1>
-        </div>
+      <>
+        <Helmet>
+          <title>{seconds}</title>
+        </Helmet>
 
-        <div className='stopwatch__controls'>
-          {/* Prevent button re-render for better accessbility by changing text, class and click handlers only */}
-          <button
-            type='button'
-            className={isStart ? 'stopwatch__start' : 'stopwatch__stop'}
-            onClick={handleStartAndStopClick}
-          >
-            {isStart ? (secondsElapsed === 0 ? 'Start' : 'Continue') : 'Pause'}
-          </button>
+        <main className='stopwatch'>
+          {/* Store calculations in variables before template render for clarity  */}
+          <div className='stopwatch__timer'>
+            <h1>
+              <span className='stopwatch__timer--seconds'>{seconds}</span>
+              <span className='stopwatch__timer--mili'>
+                .{''}
+                {miliSecondsElapsed}
+              </span>
+            </h1>
+          </div>
 
-          {timerHasStarted && (
-            <>
-              <button
-                type='button'
-                className={'stopwatch__btn'}
-                onClick={handleLapAndResetClick}
-              >
-                {!isLastIncrementer ? 'Lap' : 'Reset'}
-              </button>
+          <div className='stopwatch__controls'>
+            {/* Prevent button re-render for better accessbility by changing text, class and click handlers only */}
+            <button
+              type='button'
+              className={isStart ? 'stopwatch__start' : 'stopwatch__stop'}
+              onClick={handleStartAndStopClick}
+            >
+              {isStart
+                ? secondsElapsed === 0
+                  ? 'Start'
+                  : 'Continue'
+                : 'Pause'}
+            </button>
 
-              {/* Add persist to localStorage button so users can come back to their saved data */}
-              <button
-                type='button'
-                className={'stopwatch__btn'}
-                onClick={() => this.persistToStorage()}
-              >
-                Save
-              </button>
-            </>
+            {timerHasStarted && (
+              <>
+                <button
+                  type='button'
+                  className={'stopwatch__btn'}
+                  onClick={handleLapAndResetClick}
+                >
+                  {!isLastIncrementer ? 'Lap' : 'Reset'}
+                </button>
+
+                {/* Add persist to localStorage button so users can come back to their saved data */}
+                <button
+                  type='button'
+                  className={'stopwatch__btn'}
+                  onClick={() => this.persistToStorage()}
+                >
+                  Save
+                </button>
+              </>
+            )}
+          </div>
+
+          {!!laps.length && (
+            <table className='stopwatch__laps'>
+              {/* Remove '&&' check and replace with optional chaining */}
+              <thead>
+                <tr>
+                  <th>Lap</th>
+                  <th>Time</th>
+                  <th>Total Time</th>
+                  <th>Delete Lap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {laps?.map((lap, i) => {
+                  const key = i + 1;
+                  const previousLap = key >= 0 ? laps[key] : null;
+                  return (
+                    // Repeated components require a unique key to allow react to know what element in a list of elements has been deleted / inserted
+                    <Lap
+                      key={`lap-${lap.id}`}
+                      prevLap={previousLap}
+                      lap={lap}
+                      onDelete={() => this.handleDeleteClick(lap.id)}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-        </div>
-
-        {!!laps.length && (
-          <table className='stopwatch__laps'>
-            {/* Remove '&&' check and replace with optional chaining */}
-            <thead>
-              <tr>
-                <th>Lap</th>
-                <th>Time</th>
-                <th>Total Time</th>
-                <th>Delete Lap</th>
-              </tr>
-            </thead>
-            <tbody>
-              {laps?.map((lap, i) => {
-                const key = i + 1;
-                const previousLap = key >= 0 ? laps[key] : null;
-                return (
-                  // Repeated components require a unique key to allow react to know what element in a list of elements has been deleted / inserted
-                  <Lap
-                    key={`lap-${lap.id}`}
-                    prevLap={previousLap}
-                    lap={lap}
-                    onDelete={() => this.handleDeleteClick(lap.id)}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </main>
+        </main>
+      </>
     );
   }
 }
