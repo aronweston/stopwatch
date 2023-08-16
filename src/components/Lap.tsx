@@ -9,7 +9,7 @@ export interface LapProps {
 export default function Lap({ lap, onDelete }: LapProps) {
   return (
     <div className='stopwatch-lap'>
-      <strong>{lap.id}</strong> / {formattedSeconds(lap.time)}{' '}
+      <strong>{lap.id}</strong> / {formattedSeconds(lap.seconds)}:{lap.mili}{' '}
       <button onClick={onDelete}> X </button>
     </div>
   );

@@ -8,12 +8,14 @@ interface StopwatchProps extends ClassAttributes<Stopwatch> {
 
 export interface ILap {
   id: number;
-  time: number;
+  seconds: number;
+  mili: number;
 }
 
 interface StopwatchState {
   lastClearedIncrementer: null | (() => any);
   secondsElapsed: StopwatchProps['initialSeconds'];
+  miliSecondsElapsed: StopwatchProps['initialSeconds'];
   laps: ILap[];
   idValue: number;
 }
@@ -22,11 +24,13 @@ export default class Stopwatch extends Component<
   StopwatchProps,
   StopwatchState
 > {
-  public incrementer: any;
+  public secondsIncrementer: any;
+  public miliSecondsIncrementer: any;
 
   //Set state to a public object and assign a type to the variable
   public state: StopwatchState = {
     secondsElapsed: 0,
+    miliSecondsElapsed: 0,
     lastClearedIncrementer: null,
     laps: [],
     idValue: 1,
@@ -51,29 +55,49 @@ export default class Stopwatch extends Component<
       this.setState({ secondsElapsed: this.state.secondsElapsed + 1 });
     }
 
-    this.incrementer = setInterval(
+    this.secondsIncrementer = setInterval(
       () => this.setState({ secondsElapsed: this.state.secondsElapsed + 1 }),
       1000
     );
+
+    this.miliSecondsIncrementer = setInterval(() => {
+      if (this.state.miliSecondsElapsed === 59) {
+        this.setState({ miliSecondsElapsed: 0 });
+      } else {
+        this.setState({
+          miliSecondsElapsed: this.state.miliSecondsElapsed + 1,
+        });
+      }
+    }, 10);
   }
 
   private handleStopClick() {
-    clearInterval(this.incrementer);
-    this.setState({ lastClearedIncrementer: this.incrementer });
+    clearInterval(this.secondsIncrementer);
+    clearInterval(this.miliSecondsIncrementer);
+    this.setState({ lastClearedIncrementer: this.secondsIncrementer });
   }
 
   private handleResetClick() {
-    clearInterval(this.incrementer);
-
-    this.setState({ laps: [], secondsElapsed: 0, idValue: 1 });
+    clearInterval(this.secondsIncrementer);
+    clearInterval(this.miliSecondsIncrementer);
+    this.setState({
+      laps: [],
+      secondsElapsed: 0,
+      miliSecondsElapsed: 0,
+      idValue: 1,
+    });
   }
 
   //Change function naming to 'handleLapClick'
   private handleLapClick() {
-    const { idValue, secondsElapsed } = this.state;
+    const { idValue, secondsElapsed, miliSecondsElapsed } = this.state;
 
     //Create a lap object with a unique id value and the time elapsed
-    const lap: ILap = { id: idValue, time: secondsElapsed };
+    const lap: ILap = {
+      id: idValue,
+      seconds: secondsElapsed,
+      mili: miliSecondsElapsed,
+    };
 
     //Create a laps array with the new lap above
     const laps: ILap[] = [...this.state.laps, lap];
@@ -103,11 +127,14 @@ export default class Stopwatch extends Component<
   }
 
   render() {
-    const { secondsElapsed, lastClearedIncrementer, laps } = this.state;
+    const { secondsElapsed, miliSecondsElapsed, lastClearedIncrementer, laps } =
+      this.state;
 
     //Assign template conditional rendering statements to clear variable names
-    const timeElapsed = formattedSeconds(secondsElapsed);
-    const isLastIncrementer = this.incrementer === lastClearedIncrementer;
+    const seconds = formattedSeconds(secondsElapsed);
+
+    const isLastIncrementer =
+      this.secondsIncrementer === lastClearedIncrementer;
     const timerHasStarted = secondsElapsed !== 0;
     const isStart = !timerHasStarted || isLastIncrementer;
 
@@ -123,7 +150,9 @@ export default class Stopwatch extends Component<
     return (
       <main className='stopwatch'>
         {/* Store calculations in variables before template render for clarity  */}
-        <h1 className='stopwatch-timer'>{timeElapsed}</h1>
+        <h1 className='stopwatch-timer'>
+          {seconds}:{miliSecondsElapsed}
+        </h1>
 
         {/* Prevent button re-render for better accessbility by changing text, class and click handlers only */}
         <button
