@@ -1,20 +1,15 @@
 import { formattedSeconds } from '../utils/helpers';
+import { ILap } from './StopWatch';
 
 export interface LapProps {
-  index: number;
-  lap: number;
+  lap: ILap;
   onDelete: () => void;
 }
 
-/* 
-Notes:
-- Delete function does not delete invidiual lap but all of the laps
-*/
-
-export default function Lap({ index, lap, onDelete }: LapProps) {
+export default function Lap({ lap, onDelete }: LapProps) {
   return (
     <div className='stopwatch-lap'>
-      <strong>{index}</strong>/ {formattedSeconds(lap)}{' '}
+      <strong>{lap.id}</strong> / {formattedSeconds(lap.time)}{' '}
       <button onClick={onDelete}> X </button>
     </div>
   );

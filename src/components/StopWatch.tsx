@@ -6,10 +6,15 @@ interface StopwatchProps extends ClassAttributes<Stopwatch> {
   initialSeconds: number;
 }
 
+export interface ILap {
+  id: number;
+  time: number;
+}
+
 interface StopwatchState {
   lastClearedIncrementer: null | (() => any);
   secondsElapsed: StopwatchProps['initialSeconds'];
-  laps: number[] | [];
+  laps: ILap[];
 }
 
 export default class Stopwatch extends Component<
@@ -17,8 +22,10 @@ export default class Stopwatch extends Component<
   StopwatchState
 > {
   public incrementer: any;
+  public idValue = 1;
 
-  state: StopwatchState = {
+  //Set state to a public object and assign a type to the variable
+  public state: StopwatchState = {
     secondsElapsed: 0,
     lastClearedIncrementer: null,
     laps: [],
@@ -26,6 +33,8 @@ export default class Stopwatch extends Component<
 
   constructor(props: StopwatchProps) {
     super(props);
+
+    //Assign a props value to state when the component mounts
     this.state.secondsElapsed = props.initialSeconds;
 
     //All functions require to be bound to "this"
@@ -37,10 +46,7 @@ export default class Stopwatch extends Component<
 
   private handleStartClick() {
     this.incrementer = setInterval(
-      () =>
-        this.setState({
-          secondsElapsed: this.state.secondsElapsed + 1,
-        }),
+      () => this.setState({ secondsElapsed: this.state.secondsElapsed + 1 }),
       1000
     );
   }
@@ -52,70 +58,92 @@ export default class Stopwatch extends Component<
 
   private handleResetClick() {
     clearInterval(this.incrementer);
-
-    this.setState({
-      laps: [],
-      secondsElapsed: 0,
-    });
+    this.setState({ laps: [], secondsElapsed: 0 });
   }
 
   //Change function naming to 'handleLapClick'
   private handleLapClick() {
-    const laps = [...this.state.laps, this.state.secondsElapsed];
+    //Create a lap object with a unique id value and the time elapsed
+    const lap: ILap = { id: this.idValue, time: this.state.secondsElapsed };
+
+    //Create a laps array with the new lap above
+    const laps: ILap[] = [...this.state.laps, lap];
+
+    //Increment each value to set the new id value to the next lap selected
+    this.idValue++;
+
+    //Set the new array of laps to state
+    //Remove forceUpdate() due to setState updating the component as state has changed, and removes any unexpected bugs
     this.setState({ laps });
-    this.forceUpdate();
   }
 
-  private handleDeleteClick(index: number) {
-    this.setState({ laps: this.state.laps.splice(index, 1) });
+  private handleDeleteClick(lapId: number) {
+    //Find the lap in the laps array
+    const found = this.state.laps.find(({ id }) => id === lapId);
+    if (!found) return;
+
+    //Remove the found lap from the array
+    const filteredLaps = this.state.laps.filter((lap) => lap.id !== found.id);
+
+    //Reset the id value counter to 1 when all laps are removed
+    if (this.state.laps.length === 1) {
+      this.idValue = 1;
+    }
+
+    //Set the new array to state
+    this.setState({ laps: filteredLaps });
   }
 
   render() {
-    const { secondsElapsed, lastClearedIncrementer } = this.state;
+    const { secondsElapsed, lastClearedIncrementer, laps } = this.state;
+
+    //Assign template conditional rendering statements to clear variable names
+    const timeElapsed = formattedSeconds(secondsElapsed);
+    const isLastIncrementer = this.incrementer === lastClearedIncrementer;
+    const timerHasStarted = secondsElapsed !== 0;
+    const isStart = !timerHasStarted || isLastIncrementer;
+
+    //Assign click handlers to variables based on their requirements
+    const handleStartAndStopClick = isStart
+      ? this.handleStartClick
+      : this.handleStopClick;
+
+    const handleLapAndResetClick = !isLastIncrementer
+      ? this.handleLapClick
+      : this.handleResetClick;
 
     return (
-      <div className='stopwatch'>
-        <h1 className='stopwatch-timer'>{formattedSeconds(secondsElapsed)}</h1>
-        {secondsElapsed === 0 || this.incrementer === lastClearedIncrementer ? (
-          <button
-            type='button'
-            className='start-btn'
-            onClick={this.handleStartClick}
-          >
-            start
-          </button>
-        ) : (
-          <button
-            type='button'
-            className='stop-btn'
-            onClick={this.handleStopClick}
-          >
-            stop
+      <main className='stopwatch'>
+        {/* Store calculations in variables before template render for clarity  */}
+        <h1 className='stopwatch-timer'>{timeElapsed}</h1>
+
+        {/* Prevent button re-render for better accessbility by changing text, class and click handlers only */}
+        <button
+          type='button'
+          className={isStart ? 'start-btn' : 'stop-btn'}
+          onClick={handleStartAndStopClick}
+        >
+          {isStart ? 'Start' : 'Stop'}
+        </button>
+
+        {timerHasStarted && (
+          <button type='button' onClick={handleLapAndResetClick}>
+            {!isLastIncrementer ? 'Lap' : 'Reset'}
           </button>
         )}
-        {secondsElapsed !== 0 && this.incrementer !== lastClearedIncrementer ? (
-          <button type='button' onClick={this.handleLapClick}>
-            lap
-          </button>
-        ) : null}
-        {secondsElapsed !== 0 && this.incrementer === lastClearedIncrementer ? (
-          <button type='button' onClick={this.handleResetClick}>
-            reset
-          </button>
-        ) : null}
+
         <div className='stopwatch-laps'>
-          {this.state.laps &&
-            this.state.laps.map((lap, i) => (
-              // Repeated components require a unique key
-              <Lap
-                key={`unique-lap-key-${i}`}
-                index={i + 1}
-                lap={lap}
-                onDelete={() => this.handleDeleteClick(i + 1)}
-              />
-            ))}
+          {/* Remove '&&' check and replace with optional chaining */}
+          {laps?.map((lap) => (
+            // Repeated components require a unique key to allow react to know what element in a list of elements has been deleted / inserted
+            <Lap
+              key={`lap-${lap.id}`}
+              lap={lap}
+              onDelete={() => this.handleDeleteClick(lap.id)}
+            />
+          ))}
         </div>
-      </div>
+      </main>
     );
   }
 }
